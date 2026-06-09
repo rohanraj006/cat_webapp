@@ -10,6 +10,7 @@ const ProfileView = () => {
   const [targetPercentile, setTargetPercentile] = useState(user.targetPercentile || '');
   const [examDate, setExamDate] = useState(user.examDate || '');
   const [avatarColor, setAvatarColor] = useState(user.avatarColor || '#2563eb');
+  const [profilePicture, setProfilePicture] = useState(user.profilePicture || '');
   const [profileMessage, setProfileMessage] = useState('');
 
   // Password Form State
@@ -39,6 +40,49 @@ const ProfileView = () => {
     return nameStr.slice(0, 2).toUpperCase();
   };
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      setProfileMessage('Image must be less than 2MB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const MAX_SIZE = 200;
+        let width = img.width;
+        let height = img.height;
+
+        if (width > height) {
+          if (width > MAX_SIZE) {
+            height *= MAX_SIZE / width;
+            width = MAX_SIZE;
+          }
+        } else {
+          if (height > MAX_SIZE) {
+            width *= MAX_SIZE / height;
+            height = MAX_SIZE;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+        
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+        setProfilePicture(dataUrl);
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleSaveProfile = (e) => {
     e.preventDefault();
     setProfileMessage('');
@@ -53,7 +97,8 @@ const ProfileView = () => {
       name: name.trim(),
       targetPercentile: percentileNum.toFixed(2),
       examDate,
-      avatarColor
+      avatarColor,
+      profilePicture
     });
 
     setProfileMessage('Profile settings saved successfully!');
@@ -88,23 +133,38 @@ const ProfileView = () => {
     <div className="animate-fade-in" style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '800px', margin: '0 auto', width: '100%' }}>
       
       <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', padding: '10px 0' }}>
-        <div style={{
-          width: '72px',
-          height: '72px',
-          borderRadius: '50%',
-          backgroundColor: avatarColor,
-          color: '#ffffff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          fontSize: '1.6rem',
-          fontWeight: 700,
-          border: 'none',
-          boxShadow: 'var(--shadow-md)',
-          textShadow: '0 1px 2px rgba(0,0,0,0.1)'
-        }}>
-          {getInitials(name)}
-        </div>
+        {profilePicture ? (
+          <img 
+            src={profilePicture} 
+            alt="Profile" 
+            style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '50%',
+              objectFit: 'cover',
+              border: '2px solid var(--accent-primary)',
+              boxShadow: 'var(--shadow-md)'
+            }}
+          />
+        ) : (
+          <div style={{
+            width: '72px',
+            height: '72px',
+            borderRadius: '50%',
+            backgroundColor: avatarColor,
+            color: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: '1.6rem',
+            fontWeight: 700,
+            border: 'none',
+            boxShadow: 'var(--shadow-md)',
+            textShadow: '0 1px 2px rgba(0,0,0,0.1)'
+          }}>
+            {getInitials(name)}
+          </div>
+        )}
         <div>
           <h2 style={{ fontSize: '1.6rem', fontWeight: 700 }}>{user.name}</h2>
           <p style={{ color: 'var(--text-secondary)', fontSize: '0.95rem' }}>
@@ -118,19 +178,47 @@ const ProfileView = () => {
         <Card title="Edit Profile Details" subtitle="Update your targets & personalization details">
           <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             
+            {/* Custom Picture Upload */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <label htmlFor="profilePicture" style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Upload Profile Picture</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <input
+                  id="profilePicture"
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  style={{
+                    fontSize: '0.85rem',
+                    color: 'var(--text-primary)',
+                    flex: 1
+                  }}
+                />
+                {profilePicture && (
+                  <button 
+                    type="button" 
+                    className="btn btn-secondary" 
+                    onClick={() => setProfilePicture('')}
+                    style={{ padding: '4px 8px', fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'var(--danger-light)' }}
+                  >
+                    Remove
+                  </button>
+                )}
+              </div>
+            </div>
+
             {/* Color Avatar Select */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Profile Theme Color</label>
+              <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Or select a Theme Color</label>
               <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {colors.map(c => (
                   <button
                     key={c.value}
                     type="button"
-                    onClick={() => setAvatarColor(c.value)}
+                    onClick={() => { setAvatarColor(c.value); setProfilePicture(''); }}
                     style={{
                       backgroundColor: c.value,
                       padding: '0',
-                      border: avatarColor === c.value ? '3px solid var(--text-primary)' : '1px solid var(--border-color)',
+                      border: avatarColor === c.value && !profilePicture ? '3px solid var(--text-primary)' : '1px solid var(--border-color)',
                       borderRadius: '50%',
                       cursor: 'pointer',
                       width: '32px',

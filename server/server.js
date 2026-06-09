@@ -58,7 +58,7 @@ app.post('/api/signup', async (req, res) => {
     
     // Auto-login after signup
     const token = jwt.sign({ id: newUser._id, username: newUser.username }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ success: true, token, user: { id: newUser._id, username: newUser.username, name: newUser.name, targetPercentile: newUser.targetPercentile, examDate: newUser.examDate, avatarColor: newUser.avatarColor } });
+    res.json({ success: true, token, user: { id: newUser._id, username: newUser.username, name: newUser.name, targetPercentile: newUser.targetPercentile, examDate: newUser.examDate, avatarColor: newUser.avatarColor, profilePicture: newUser.profilePicture } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server error during signup' });
@@ -79,7 +79,7 @@ app.post('/api/login', async (req, res) => {
     }
 
     const token = jwt.sign({ id: user._id, username: user.username }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ success: true, token, user: { id: user._id, username: user.username, name: user.name, targetPercentile: user.targetPercentile, examDate: user.examDate, avatarColor: user.avatarColor } });
+    res.json({ success: true, token, user: { id: user._id, username: user.username, name: user.name, targetPercentile: user.targetPercentile, examDate: user.examDate, avatarColor: user.avatarColor, profilePicture: user.profilePicture } });
   } catch (error) {
     console.error(error);
     res.status(500).json({ success: false, message: 'Server error during login' });

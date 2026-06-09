@@ -182,22 +182,36 @@ const Navbar = ({ activeTab, setActiveTab }) => {
 
         {/* User Info & Logout */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <div style={{ 
-            width: '32px', 
-            height: '32px', 
-            borderRadius: '50%', 
-            backgroundColor: user.avatarColor || 'var(--accent-primary)',
-            color: '#ffffff',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '0.8rem',
-            fontWeight: 700,
-            border: 'none',
-            textShadow: '0 1px 1px rgba(0,0,0,0.1)'
-          }}>
-            {getInitials(user.name)}
-          </div>
+          {user.profilePicture ? (
+            <img 
+              src={user.profilePicture} 
+              alt={user.name} 
+              style={{
+                width: '32px', 
+                height: '32px', 
+                borderRadius: '50%',
+                objectFit: 'cover',
+                border: '1px solid var(--border-color)'
+              }} 
+            />
+          ) : (
+            <div style={{ 
+              width: '32px', 
+              height: '32px', 
+              borderRadius: '50%', 
+              backgroundColor: user.avatarColor || 'var(--accent-primary)',
+              color: '#ffffff',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '0.8rem',
+              fontWeight: 700,
+              border: 'none',
+              textShadow: '0 1px 1px rgba(0,0,0,0.1)'
+            }}>
+              {getInitials(user.name)}
+            </div>
+          )}
           <span className="nav-label" style={{ fontWeight: 500, fontSize: '0.9rem', color: 'var(--text-primary)' }}>
             {user.name}
           </span>

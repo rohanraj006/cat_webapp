@@ -7,7 +7,8 @@ const userSchema = new mongoose.Schema({
   name: { type: String, default: 'Student' },
   targetPercentile: { type: String, default: '99' },
   examDate: { type: String, default: '2026-11-29' },
-  avatarColor: { type: String, default: '#2563eb' }
+  avatarColor: { type: String, default: '#2563eb' },
+  profilePicture: { type: String, default: '' }
 }, { timestamps: true });
 
 // Topic Schema
