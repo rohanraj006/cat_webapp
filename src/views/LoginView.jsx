@@ -3,18 +3,35 @@ import { useCATData } from '../context/CATDataContext';
 import Card from '../components/Card';
 
 const LoginView = () => {
-  const { login, darkMode, toggleTheme } = useCATData();
+  const { login, signup, darkMode, toggleTheme } = useCATData();
+  const [isLogin, setIsLogin] = useState(true);
+  
+  // Form state
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [targetPercentile, setTargetPercentile] = useState('');
+  const [examDate, setExamDate] = useState('');
+  
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
-    const success = login(username, password);
-    if (!success) {
-      setError('Invalid username or password');
+    setLoading(true);
+    
+    let result;
+    if (isLogin) {
+      result = await login(username, password);
+    } else {
+      result = await signup({ username, password, name, targetPercentile, examDate });
     }
+    
+    if (!result.success) {
+      setError(result.message || 'Authentication failed');
+    }
+    setLoading(false);
   };
 
   return (
@@ -80,10 +97,30 @@ const LoginView = () => {
 
         <Card className="animate-fade-in" style={{ padding: '32px' }}>
           <h2 style={{ fontSize: '1.4rem', marginBottom: '24px', fontWeight: 600, textAlign: 'center' }}>
-            Sign In to Dashboard
+            {isLogin ? 'Sign In to Dashboard' : 'Create an Account'}
           </h2>
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+            
+            {!isLogin && (
+              <>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <label htmlFor="name" style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Full Name</label>
+                  <input id="name" type="text" value={name} onChange={(e) => setName(e.target.value)} placeholder="John Doe" required style={{ fontSize: '1rem' }} />
+                </div>
+                <div style={{ display: 'flex', gap: '10px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                    <label htmlFor="target" style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Target Percentile</label>
+                    <input id="target" type="number" step="0.01" value={targetPercentile} onChange={(e) => setTargetPercentile(e.target.value)} placeholder="99.5" required style={{ fontSize: '1rem' }} />
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+                    <label htmlFor="examDate" style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Exam Date</label>
+                    <input id="examDate" type="date" value={examDate} onChange={(e) => setExamDate(e.target.value)} required style={{ fontSize: '1rem' }} />
+                  </div>
+                </div>
+              </>
+            )}
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
               <label htmlFor="username" style={{ fontSize: '0.875rem', fontWeight: 500, color: 'var(--text-secondary)' }}>
                 Username
@@ -129,10 +166,27 @@ const LoginView = () => {
               </div>
             )}
 
-            <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px', fontSize: '1rem' }}>
-              Access Dashboard
+            <button disabled={loading} type="submit" className="btn btn-primary" style={{ width: '100%', padding: '12px', fontSize: '1rem', opacity: loading ? 0.7 : 1 }}>
+              {loading ? 'Processing...' : (isLogin ? 'Access Dashboard' : 'Create Account')}
             </button>
           </form>
+
+          <div style={{ marginTop: '20px', textAlign: 'center' }}>
+            <button 
+              type="button" 
+              onClick={() => { setIsLogin(!isLogin); setError(''); }}
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--accent-primary)',
+                fontWeight: 500,
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Sign In"}
+            </button>
+          </div>
         </Card>
       </div>
     </div>

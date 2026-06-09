@@ -3,14 +3,20 @@ import { useCATData } from '../context/CATDataContext';
 import Card from '../components/Card';
 
 const ProfileView = () => {
-  const { user, updateProfile, resetAllData } = useCATData();
+  const { user, updateProfile, changePassword } = useCATData();
 
   // Profile Form State
   const [name, setName] = useState(user.name || '');
   const [targetPercentile, setTargetPercentile] = useState(user.targetPercentile || '');
   const [examDate, setExamDate] = useState(user.examDate || '');
   const [avatarColor, setAvatarColor] = useState(user.avatarColor || '#2563eb');
-  const [message, setMessage] = useState('');
+  const [profileMessage, setProfileMessage] = useState('');
+
+  // Password Form State
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordMessage, setPasswordMessage] = useState({ text: '', type: '' });
 
   const colors = [
     { name: 'Blue', value: '#2563eb' },
@@ -33,13 +39,13 @@ const ProfileView = () => {
     return nameStr.slice(0, 2).toUpperCase();
   };
 
-  const handleSave = (e) => {
+  const handleSaveProfile = (e) => {
     e.preventDefault();
-    setMessage('');
+    setProfileMessage('');
     
     const percentileNum = parseFloat(targetPercentile);
     if (isNaN(percentileNum) || percentileNum < 0 || percentileNum > 100) {
-      setMessage('Target Percentile must be between 0 and 100');
+      setProfileMessage('Target Percentile must be between 0 and 100');
       return;
     }
 
@@ -50,37 +56,31 @@ const ProfileView = () => {
       avatarColor
     });
 
-    setMessage('Profile settings saved successfully!');
-    setTimeout(() => setMessage(''), 3000);
+    setProfileMessage('Profile settings saved successfully!');
+    setTimeout(() => setProfileMessage(''), 3000);
   };
 
-  // Export Data Backup Helper
-  const handleExportBackup = () => {
-    const backup = {
-      user: JSON.parse(localStorage.getItem('cat_user')),
-      topics: JSON.parse(localStorage.getItem('cat_topics')),
-      calendarLogs: JSON.parse(localStorage.getItem('cat_calendarLogs')),
-      mocks: JSON.parse(localStorage.getItem('cat_mocks')),
-      exportDate: new Date().toISOString()
-    };
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    setPasswordMessage({ text: '', type: '' });
 
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(backup, null, 2));
-    const downloadAnchor = document.createElement('a');
-    downloadAnchor.setAttribute("href", dataStr);
-    downloadAnchor.setAttribute("download", `cat_tracker_backup_${new Date().toISOString().split('T')[0]}.json`);
-    document.body.appendChild(downloadAnchor);
-    downloadAnchor.click();
-    downloadAnchor.remove();
-  };
+    if (newPassword !== confirmPassword) {
+      setPasswordMessage({ text: "New passwords don't match", type: 'error' });
+      return;
+    }
+    if (newPassword.length < 6) {
+      setPasswordMessage({ text: "Password must be at least 6 characters long", type: 'error' });
+      return;
+    }
 
-  // Reset Trigger
-  const handleReset = () => {
-    const confirmReset = window.confirm(
-      "WARNING: This will permanently wipe all your preparation logs, topics list, mock scores, and settings. Are you sure you want to reset everything?"
-    );
-    if (confirmReset) {
-      resetAllData();
-      window.location.reload();
+    const result = await changePassword(currentPassword, newPassword);
+    if (result.success) {
+      setPasswordMessage({ text: "Password updated successfully!", type: 'success' });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+    } else {
+      setPasswordMessage({ text: result.message || "Failed to update password", type: 'error' });
     }
   };
 
@@ -116,7 +116,7 @@ const ProfileView = () => {
       <div className="grid-cols-2" style={{ gap: '24px' }}>
         {/* Personal details customization */}
         <Card title="Edit Profile Details" subtitle="Update your targets & personalization details">
-          <form onSubmit={handleSave} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <form onSubmit={handleSaveProfile} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
             
             {/* Color Avatar Select */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
@@ -185,18 +185,18 @@ const ProfileView = () => {
               />
             </div>
 
-            {message && (
+            {profileMessage && (
               <div style={{
                 fontSize: '0.85rem',
                 fontWeight: 600,
                 textAlign: 'center',
                 padding: '8px',
                 borderRadius: 'var(--radius-sm)',
-                backgroundColor: message.includes('successfully') ? 'var(--success-light)' : 'var(--danger-light)',
-                color: message.includes('successfully') ? 'var(--success)' : 'var(--danger)',
-                border: `1px solid ${message.includes('successfully') ? 'var(--success)' : 'var(--danger)'}`
+                backgroundColor: profileMessage.includes('successfully') ? 'var(--success-light)' : 'var(--danger-light)',
+                color: profileMessage.includes('successfully') ? 'var(--success)' : 'var(--danger)',
+                border: `1px solid ${profileMessage.includes('successfully') ? 'var(--success)' : 'var(--danger)'}`
               }}>
-                {message}
+                {profileMessage}
               </div>
             )}
 
@@ -208,49 +208,59 @@ const ProfileView = () => {
 
         {/* Database & Data Management */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          <Card title="Data Management" subtitle="Save or restore local tracking databases">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>
-                Your progress information is saved directly in this browser's internal local storage database. It is fast, private, and works offline.
-              </p>
-              
-              <button 
-                type="button" 
-                className="btn btn-secondary" 
-                onClick={handleExportBackup}
-                style={{ justifyContent: 'flex-start' }}
-              >
-                Export JSON Backup
-              </button>
-
-              <button 
-                type="button" 
-                className="btn btn-danger" 
-                onClick={handleReset}
-                style={{ justifyContent: 'flex-start' }}
-              >
-                Clear Databases (Factory Reset)
-              </button>
-            </div>
-          </Card>
-
-          <Card title="Security & Login Credentials" subtitle="Access configuration and login keys">
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem' }}>
-              <p style={{ color: 'var(--text-secondary)' }}>
-                The tracking portal is locked behind a dashboard check. For safety during mock distributions, credentials can only be verified against default profile keys.
-              </p>
-              <div style={{
-                padding: '12px',
-                backgroundColor: 'var(--bg-tertiary)',
-                borderRadius: 'var(--radius-sm)',
-                border: '1px solid var(--border-color)',
-                marginTop: '4px'
-              }}>
-                <strong>Default Login Details:</strong><br />
-                • Username: <code style={{ fontSize: '0.8rem' }}>davaladarshini</code><br />
-                • Password: <code style={{ fontSize: '0.8rem' }}>davala@11</code>
+          
+          <Card title="Security Settings" subtitle="Change your password">
+            <form onSubmit={handlePasswordChange} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Current Password</label>
+                <input
+                  type="password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
               </div>
-            </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>New Password</label>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                <label style={{ fontSize: '0.85rem', fontWeight: 500, color: 'var(--text-secondary)' }}>Confirm New Password</label>
+                <input
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  placeholder="••••••••"
+                  required
+                />
+              </div>
+
+              {passwordMessage.text && (
+                <div style={{
+                  fontSize: '0.85rem',
+                  fontWeight: 600,
+                  textAlign: 'center',
+                  padding: '8px',
+                  borderRadius: 'var(--radius-sm)',
+                  backgroundColor: passwordMessage.type === 'success' ? 'var(--success-light)' : 'var(--danger-light)',
+                  color: passwordMessage.type === 'success' ? 'var(--success)' : 'var(--danger)',
+                  border: `1px solid ${passwordMessage.type === 'success' ? 'var(--success)' : 'var(--danger)'}`
+                }}>
+                  {passwordMessage.text}
+                </div>
+              )}
+
+              <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '8px' }}>
+                Change Password
+              </button>
+            </form>
           </Card>
         </div>
       </div>

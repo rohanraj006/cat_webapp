@@ -6,6 +6,7 @@ import DashboardView from './views/DashboardView';
 import ChecklistView from './views/ChecklistView';
 import CalendarView from './views/CalendarView';
 import ProfileView from './views/ProfileView';
+import NotesView from './views/NotesView';
 
 function AppContent() {
   const { isLoggedIn } = useCATData();
@@ -27,6 +28,8 @@ function AppContent() {
         return <CalendarView />;
       case 'profile':
         return <ProfileView />;
+      case 'notes':
+        return <NotesView />;
       default:
         return <DashboardView />;
     }
